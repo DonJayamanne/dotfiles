@@ -219,6 +219,18 @@ if [[ ! -d "$HOME/.zprezto" ]]; then
     log_success "zprezto installed"
 fi
 
+# Configure zprezto with custom zpreztorc
+if [[ -f "./zpreztorc" ]]; then
+    log_info "Installing custom zprezto configuration..."
+    if [[ -f "$HOME/.zprezto/runcoms/zpreztorc" ]]; then
+        cp "$HOME/.zprezto/runcoms/zpreztorc" "$HOME/.zprezto/runcoms/zpreztorc.backup_$(date +%Y%m%d_%H%M%S)"
+    fi
+    cp "./zpreztorc" "$HOME/.zprezto/runcoms/zpreztorc"
+    log_success "zprezto configuration installed"
+else
+    log_warning "zpreztorc not found in scripts directory - using default"
+fi
+
 # =================================================================
 # Step 5: Install Fonts
 # =================================================================
