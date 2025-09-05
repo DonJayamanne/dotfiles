@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
 
-# Make vim the default editor.
-export EDITOR='vim';
-
 # Enable persistent REPL history for `node`.
 export NODE_REPL_HISTORY=~/.node_history;
 # Allow 32³ entries; the default is 1000.
@@ -35,3 +32,10 @@ export GPG_TTY=$(tty);
 
 # Hide the “default interactive shell is now zsh” warning on macOS.
 export BASH_SILENCE_DEPRECATION_WARNING=1;
+
+# Added by Don 12 Dec 2019
+export OHMY_ZSH_HOME="$HOME/.oh-my-zsh"
+export OHMY_ZSH_PLUGINS="$HOME/.oh-my-zsh/plugins"
+
+# Add `~/bin` to the `$PATH`
+export PATH="$HOME/bin:$PATH";

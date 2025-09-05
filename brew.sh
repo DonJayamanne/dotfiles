@@ -1,101 +1,100 @@
 #!/usr/bin/env bash
 
-# Install command-line tools using Homebrew.
+# =================================================================
+# Don's Additional Homebrew Packages
+# =================================================================
+# This file contains Don's additional packages that are NOT in the
+# upstream brew.sh file. This prevents merge conflicts while adding
+# modern development tools.
+# =================================================================
 
-# Make sure we’re using the latest Homebrew.
+# Load common utilities
+source "$(dirname "$0")/scripts/common.sh"
+
+
+# Make sure we're using the latest Homebrew
 brew update
 
-# Upgrade any already-installed formulae.
+# Upgrade any already-installed formulae
 brew upgrade
 
-# Save Homebrew’s installed location.
+# Save Homebrew's installed location for later use
 BREW_PREFIX=$(brew --prefix)
 
-# Install GNU core utilities (those that come with macOS are outdated).
-# Don’t forget to add `$(brew --prefix coreutils)/libexec/gnubin` to `$PATH`.
-brew install coreutils
-ln -s "${BREW_PREFIX}/bin/gsha256sum" "${BREW_PREFIX}/bin/sha256sum"
+# Don's Essential Development Tools
+don_packages=(
+    "pyenv"         # Python version manager
+    "fnm"           # Fast Node Manager (Node.js version manager)
+    "starship"      # Cross-shell prompt
+    "pinentry-mac"  # GPG password entry for macOS
+    "azure-cli"     # Azure command line interface
+    "gh"            # GitHub CLI
+    "git-lfs"       # Git Large File Storage
 
-# Install some other useful utilities like `sponge`.
-brew install moreutils
-# Install GNU `find`, `locate`, `updatedb`, and `xargs`, `g`-prefixed.
-brew install findutils
-# Install GNU `sed`, overwriting the built-in `sed`.
-brew install gnu-sed --with-default-names
-# Install a modern version of Bash.
-brew install bash
-brew install bash-completion2
+    # Modern CLI improvements
+	# "zsh-autosuggestions" # Ghost text style suggestions
+	# "zsh-syntax-highlighting" # Syntax highlighting
+    # "bat"           # Better cat with syntax highlighting
+    # "exa"           # Better ls with colors and icons
+    # "ripgrep"       # Better grep (faster)
+    # "fd"            # Better find
+    # "htop"          # Better top
+    "tree"          # Directory tree visualization
+    # "jq"            # JSON processor
 
-# Switch to using brew-installed bash as default shell
-if ! fgrep -q "${BREW_PREFIX}/bin/bash" /etc/shells; then
-  echo "${BREW_PREFIX}/bin/bash" | sudo tee -a /etc/shells;
-  chsh -s "${BREW_PREFIX}/bin/bash";
-fi;
+    # Network and utilities
+    "curl"          # Latest curl version
+    "wget"          # Web downloader
 
-# Install `wget` with IRI support.
-brew install wget --with-iri
+    # GNU utilities (better than macOS versions)
+    # "coreutils"     # GNU core utilities
+    # "moreutils"     # Additional useful utilities
+    # "findutils"     # GNU find, locate, updatedb, xargs
+    # "gnu-sed"       # GNU sed (better than macOS sed)
 
-# Install GnuPG to enable PGP-signing commits.
-brew install gnupg
+	"gnupg"         # Install GnuPG to enable PGP-signing commits.
+    "grep"          # GNU grep
+    "openssh"       # Latest OpenSSH
 
-# Install more recent versions of some macOS tools.
-brew install vim --with-override-system-vi
-brew install grep
-brew install openssh
-brew install screen
-brew install php
-brew install gmp
+	"rustup"
+)
 
-# Install font tools.
-brew tap bramstein/webfonttools
-brew install sfnt2woff
-brew install sfnt2woff-zopfli
-brew install woff2
+# Install Don's packages
+for package in "${don_packages[@]}"; do
+    if ! brew list "$package" &>/dev/null; then
+        brew install "$package"
+    fi
+done
 
-# Install some CTF tools; see https://github.com/ctfs/write-ups.
-brew install aircrack-ng
-brew install bfg
-brew install binutils
-brew install binwalk
-brew install cifer
-brew install dex2jar
-brew install dns2tcp
-brew install fcrackzip
-brew install foremost
-brew install hashpump
-brew install hydra
-brew install john
-brew install knock
-brew install netpbm
-brew install nmap
-brew install pngcheck
-brew install socat
-brew install sqlmap
-brew install tcpflow
-brew install tcpreplay
-brew install tcptrace
-brew install ucspi-tcp # `tcpserver` etc.
-brew install xpdf
-brew install xz
+# =================================================================
+# Don's Applications via Homebrew Cask
+# =================================================================
+don_apps=(
+    "font-fira-code-nerd-font"      # FiraCode Nerd Font
+    "font-symbols-only-nerd-font"   # Symbols Nerd Font
+    # "visual-studio-code"            # VS Code Stable
+    # "visual-studio-code-insiders"   # VS Code Insiders
+    # "microsoft-edge"                # Edge browser
+    # "docker"                        # Docker Desktop
+    # "postman"                       # API development tool
+    # "xcode"                         # Apple development IDE
+    # "gpg-suite"                     # GPG Keychain and tools
+    # "slack"                         # Team communication
+    # "okta-verify"                   # 2FA authentication
+    # "ollama"                        # Local AI model runner
+    # "tor-browser"                   # Privacy-focused browser
+    # "rectangle"                     # Window management tool
+)
 
-# Install other useful binaries.
-brew install ack
-#brew install exiv2
-brew install git
-brew install git-lfs
-brew install gs
-brew install imagemagick --with-webp
-brew install lua
-brew install lynx
-brew install p7zip
-brew install pigz
-brew install pv
-brew install rename
-brew install rlwrap
-brew install ssh-copy-id
-brew install tree
-brew install vbindiff
-brew install zopfli
 
-# Remove outdated versions from the cellar.
+for app in "${don_apps[@]}"; do
+    if ! brew list --cask "$app" &>/dev/null; then
+        brew install --cask "$app"
+    fi
+done
+
+# =================================================================
+# Cleanup
+# =================================================================
 brew cleanup
+

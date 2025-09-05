@@ -1,111 +1,226 @@
-# Mathias’s dotfiles
+# Don's Dotfiles Setup Guide
 
-![Screenshot of my shell prompt](https://i.imgur.com/EkEtphC.png)
+> **🔥 Modern Mac Setup** - Complete automation for new Mac development environment
 
-## Installation
+This is Don's customized fork of [Mathias Bynens' dotfiles](https://github.com/mathiasbynens/dotfiles) with additional modern development tools and streamlined setup process.
 
-**Warning:** If you want to give these dotfiles a try, you should first fork this repository, review the code, and remove things you don’t want or need. Don’t blindly use my settings unless you know what that entails. Use at your own risk!
+## 🚀 Quick Setup for New Mac
 
-### Using Git and the bootstrap script
-
-You can clone the repository wherever you want. (I like to keep it in `~/Projects/dotfiles`, with `~/dotfiles` as a symlink.) The bootstrapper script will pull in the latest version and copy the files to your home folder.
+**One command to set up everything:**
 
 ```bash
-git clone https://github.com/mathiasbynens/dotfiles.git && cd dotfiles && source bootstrap.sh
+git clone https://github.com/DonJayamanne/dotfiles.git && cd dotfiles
 ```
 
 To update, `cd` into your local `dotfiles` repository and then:
 
 ```bash
-source bootstrap.sh
+source ./bootstrap.sh
 ```
 
-Alternatively, to update while avoiding the confirmation prompt:
+To update, `cd` into your local `dotfiles` repository and then:
 
 ```bash
-set -- -f; source bootstrap.sh
+source ./setup-mac.sh
 ```
 
-### Git-free install
+⏱️ **Time:** ~15-30 minutes (depending on internet speed)
 
-To install these dotfiles without Git:
+The script will:
+- Prompt for your exported keys location (optional)
+- Install Homebrew and all development tools
+- Configure Git with GPG signing (if keys provided)
+- Set up Zsh, Oh My Zsh, and Starship prompt
+- Install programming fonts
+- Configure macOS preferences (optional)
 
-```bash
-cd; curl -#L https://github.com/mathiasbynens/dotfiles/tarball/main | tar -xzv --strip-components 1 --exclude={README.md,bootstrap.sh,.osx,LICENSE-MIT.txt}
+## 🎯 What Gets Installed
+
+### **Core Development Stack**
+- **Shell:** Zsh (latest) + Oh My Zsh + custom plugins
+- **Prompt:** Starship (via Homebrew) with custom configuration
+- **Languages:** Python (pyenv), Node.js (fnm via Homebrew), Rust (rustup)
+- **Package Managers:** UV (Python), Homebrew, Cargo
+
+### **Essential Development Tools**
+- **Editors:** VS Code (stable & insiders), Xcode
+- **Version Control:** Git + Git LFS + GitHub CLI
+- **Containerization:** Docker Desktop
+- **API Testing:** Postman
+- **Security:** GPG Suite with macOS keychain integration
+
+### **Modern CLI Improvements**
+- `bat` → better `cat` with syntax highlighting
+- `exa` → better `ls` with colors and icons
+- `ripgrep` → faster `grep`
+- `fd` → better `find`
+- `tree` → directory visualization
+
+### **Productivity Apps**
+- Microsoft Edge, Slack, Rectangle (window management)
+- Ollama (local AI), Okta Verify
+
+### **Fonts & Aesthetics**
+- Nerd Fonts: FiraCode, Monaspace, Symbols
+- Custom Starship prompt with programming language detection
+
+## 🔧 Architecture
+
+### **Merge-Friendly Design**
+This fork uses a **modular approach** to avoid merge conflicts:
+
+```
+├── README.md           # ← Upstream (automatically updated to point to README-don.md)
+├── README-don.md       # ← This file (Don's instructions)
+├── brew.sh             # ← Main package installer
+├── setup-mac.sh        # ← Don's main installer (root level)
+├── .zshrc              # ← Don's customized zsh config
+├── .zpreztorc          # ← Prezto configuration
+├── .zprofile           # ← Zsh profile settings
+├── .config/starship.toml # ← Don's prompt config
+└── scripts/
+    ├── export-keys.sh     # ← Key export automation
+    ├── import-keys.sh     # ← Key import + Git setup (merged)
+    └── upstream-sync.sh   # ← Easy upstream sync
 ```
 
-To update later on, just run that command again.
-
-### Specify the `$PATH`
-
-If `~/.path` exists, it will be sourced along with the other files, before any feature testing (such as [detecting which version of `ls` is being used](https://github.com/mathiasbynens/dotfiles/blob/aff769fd75225d8f2e481185a71d5e05b76002dc/.aliases#L21-L26)) takes place.
-
-Here’s an example `~/.path` file that adds `/usr/local/bin` to the `$PATH`:
+### **Easy Upstream Syncing**
+Get latest improvements from upstream with zero conflicts:
 
 ```bash
-export PATH="/usr/local/bin:$PATH"
+./scripts/upstream-sync.sh
 ```
 
-### Add custom commands without creating a new fork
+This safely merges all upstream improvements while preserving your customizations.
 
-If `~/.extra` exists, it will be sourced along with the other files. You can use this to add a few custom commands without the need to fork this entire repository, or to add commands you don’t want to commit to a public repository.
+## 📋 Post-Installation Steps
 
-My `~/.extra` looks something like this:
+### 1. **Transfer Your Keys & Configuration**
 
+**🚀 AUTOMATED (Recommended):**
 ```bash
-# Git credentials
-# Not in the repository, to prevent people from accidentally committing under my name
-GIT_AUTHOR_NAME="Mathias Bynens"
-GIT_COMMITTER_NAME="$GIT_AUTHOR_NAME"
-git config --global user.name "$GIT_AUTHOR_NAME"
-GIT_AUTHOR_EMAIL="mathias@mailinator.com"
-GIT_COMMITTER_EMAIL="$GIT_AUTHOR_EMAIL"
-git config --global user.email "$GIT_AUTHOR_EMAIL"
+# On OLD Mac: Export everything
+./scripts/export-keys.sh
+# This creates a folder with SSH keys, GPG keys, AND git configuration
+
+# Transfer the exported folder to new Mac, then run:
+./setup-mac.sh
+# This will prompt for your keys location and handle everything automatically
 ```
 
-You could also use `~/.extra` to override settings, functions and aliases from my dotfiles repository. It’s probably better to [fork this repository](https://github.com/mathiasbynens/dotfiles/fork) instead, though.
+✅ **This automated process exports/imports:**
+- SSH keys (private & public) with correct permissions
+- GPG keys (private, public & trust database)
+- **Git configuration** (name, email, GPG key, preferences) - travels with keys!
+- SSH config and known_hosts
+- Key verification and testing
 
-### Sensible macOS defaults
+**📋 Manual Alternative:** Follow [`scripts/KEY-TRANSFER-GUIDE.md`](./scripts/KEY-TRANSFER-GUIDE.md) for step-by-step manual transfer.
 
-When setting up a new Mac, you may want to set some sensible macOS defaults:
+### 2. **Configure Git (automated)**
+Git configuration travels with your keys and is automatically handled:
+1. `export-keys.sh` exports your git config FROM old Mac
+2. `import-keys.sh` imports keys AND configures Git in one step
+3. Sets up GPG signing, default branch, and all preferences automatically
+
+**Note:** Git setup happens automatically during key import - no separate step needed!
+
+### 3. **Restart Terminal**
+```bash
+source ~/.zshrc
+# or restart Terminal.app
+```
+
+## 🛠 Manual Steps (Advanced Users Only)
+
+> **Most users should just run `./setup-mac.sh` above**
+
+If you need to run individual components:
 
 ```bash
+# Install development tools only
+./brew.sh
+
+# Export keys from old Mac (run this on OLD Mac)
+./scripts/export-keys.sh
+
+# Import keys + configure Git on new Mac (combined)
+./scripts/import-keys.sh ~/path/to/exported/keys
+
+# Note: Git is configured automatically during key import
+# No separate Git setup step needed
+
+# Configure macOS only
 ./.macos
 ```
 
-### Install Homebrew formulae
+## 📱 Additional Applications
 
-When setting up a new Mac, you may want to install some common [Homebrew](https://brew.sh/) formulae (after installing Homebrew, of course):
+### Install These Apps Manually
+Since GUI applications are commented out in `brew.sh`, install these manually:
 
+#### **Development Tools**
+- [**Visual Studio Code**](https://code.visualstudio.com/) - Main editor
+- [**VS Code Insiders**](https://code.visualstudio.com/insiders/) - Preview builds
+- [**Xcode**](https://apps.apple.com/us/app/xcode/id497799835) - iOS/macOS development (App Store)
+- [**Docker Desktop**](https://www.docker.com/products/docker-desktop/) - Containerization
+- [**Postman**](https://www.postman.com/downloads/) - API testing
+
+#### **Browsers & Security**
+- [**Microsoft Edge**](https://www.microsoft.com/en-us/edge) - Modern browser
+
+#### **Productivity & Communication**
+- [**Slack**](https://apps.apple.com/us/app/slack/id803453959) - Team communication (App Store)
+- [**Rectangle**](https://rectangleapp.com/) - Window management
+- [**Okta Verify**](https://apps.apple.com/us/app/okta-verify/id490179405) - 2FA authentication (App Store)
+
+#### **AI & Development**
+- [**Ollama**](https://ollama.ai/) - Local AI model runner
+
+
+## 🔄 Maintaining Your Fork
+
+### Update from Upstream
 ```bash
-./brew.sh
+./scripts/upstream-sync.sh
 ```
 
-Some of the functionality of these dotfiles depends on formulae installed by `brew.sh`. If you don’t plan to run `brew.sh`, you should look carefully through the script and manually install any particularly important ones. A good example is Bash/Git completion: the dotfiles use a special version from Homebrew.
+### Add New Packages
+- **CLI tools:** Add to `brew.sh` (all tools via Homebrew)
+- **Zsh config:** Add to `.zshrc`
+- **Setup steps:** Update `setup-mac.sh` (or individual scripts as needed)
 
-## Feedback
+### Backup Important Configs
+The setup script automatically backs up existing configurations:
+- `~/.zshrc.backup_YYYYMMDD_HHMMSS`
+- `~/.config/starship.toml.backup_YYYYMMDD_HHMMSS`
 
-Suggestions/improvements
-[welcome](https://github.com/mathiasbynens/dotfiles/issues)!
+## 🚀 Features
 
-## Author
+### **Smart Installation**
+- ✅ Detects existing software and skips reinstallation
+- ✅ Handles both Intel and Apple Silicon Macs
+- ✅ Uses Homebrew for consistent package management
+- ✅ Backs up existing configurations before overwriting
+- ✅ Provides clear progress logging with colors
 
-| [![twitter/mathias](http://gravatar.com/avatar/24e08a9ea84deb17ae121074d0f17125?s=70)](http://twitter.com/mathias "Follow @mathias on Twitter") |
-|---|
-| [Mathias Bynens](https://mathiasbynens.be/) |
+### **Modern Development Environment**
+- ✅ Latest versions of development tools
+- ✅ Integrated GPG signing for commits
+- ✅ VS Code integration for Python environments
+- ✅ Fast Node.js switching with fnm (installed via Homebrew)
 
-## Thanks to…
+### **Zero-Conflict Upstream Merging**
+- ✅ Your customizations in separate files
+- ✅ One command to sync upstream changes
+- ✅ Never lose your personal configurations
 
-* @ptb and [his _macOS Setup_ repository](https://github.com/ptb/mac-setup)
-* [Ben Alman](http://benalman.com/) and his [dotfiles repository](https://github.com/cowboy/dotfiles)
-* [Cătălin Mariș](https://github.com/alrra) and his [dotfiles repository](https://github.com/alrra/dotfiles)
-* [Gianni Chiappetta](https://butt.zone/) for sharing his [amazing collection of dotfiles](https://github.com/gf3/dotfiles)
-* [Jan Moesen](http://jan.moesen.nu/) and his [ancient `.bash_profile`](https://gist.github.com/1156154) + [shiny _tilde_ repository](https://github.com/janmoesen/tilde)
-* [Lauri ‘Lri’ Ranta](http://lri.me/) for sharing [loads of hidden preferences](http://osxnotes.net/defaults.html)
-* [Matijs Brinkhuis](https://matijs.brinkhu.is/) and his [dotfiles repository](https://github.com/matijs/dotfiles)
-* [Nicolas Gallagher](http://nicolasgallagher.com/) and his [dotfiles repository](https://github.com/necolas/dotfiles)
-* [Sindre Sorhus](https://sindresorhus.com/)
-* [Tom Ryder](https://sanctum.geek.nz/) and his [dotfiles repository](https://sanctum.geek.nz/cgit/dotfiles.git/about)
-* [Kevin Suttle](http://kevinsuttle.com/) and his [dotfiles repository](https://github.com/kevinSuttle/dotfiles) and [macOS-Defaults project](https://github.com/kevinSuttle/macOS-Defaults), which aims to provide better documentation for [`~/.macos`](https://mths.be/macos)
-* [Haralan Dobrev](https://hkdobrev.com/)
-* Anyone who [contributed a patch](https://github.com/mathiasbynens/dotfiles/contributors) or [made a helpful suggestion](https://github.com/mathiasbynens/dotfiles/issues)
+## 🎯 Philosophy
+
+> **"Keep upstream pristine, extend with purpose"**
+
+This setup maintains the excellent foundation from Mathias Bynens while adding modern development tools and a conflict-free update mechanism. You get the best of both worlds: proven dotfiles + bleeding-edge tools.
+
+---
+
+**Enjoy your perfectly configured development environment! 🎉**

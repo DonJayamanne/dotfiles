@@ -1,5 +1,8 @@
 # Compiled Python files
 *.pyc
+__pycache__
+**/.venv*/
+**/.mypy_cache/**
 
 # Folder view configuration files
 .DS_Store
@@ -12,3 +15,14 @@ Thumbs.db
 # Files that might appear on external disks
 .Spotlight-V100
 .Trashes
+
+# Node
+**/node_modules
+
+# VS Code
+**/.vscode-test/**
+**/.vscode test/**
+**/.vscode-smoke/**
+
+# Binary files
+obj/**

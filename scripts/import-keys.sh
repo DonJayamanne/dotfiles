@@ -1,52 +1,53 @@
 #!/usr/bin/env bash
 
 # =================================================================
-# Don's Key Import Script (for New Mac)
+# Don's Key Import & Git Setup Script (for New Mac)
 # =================================================================
 # This script imports SSH and GPG keys that were exported from your
-# old Mac. Run this on your NEW Mac after transferring the keys.
+# old Mac, then configures Git with the imported settings.
+# Run this on your NEW Mac after transferring the keys.
 #
-# Usage: ./scripts/import-keys-don.sh [path-to-exported-keys]
+# Usage: ./scripts/import-keys.sh [path-to-exported-keys]
 # =================================================================
 
-set -e
+# Load common utilities
+source "$(dirname "$0")/common.sh"
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
-
-log_info() {
-    echo -e "${BLUE}[INFO]${NC} $1"
-}
-
-log_success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1"
-}
-
-log_warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1"
-}
-
-log_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
-}
-
-# Get import directory from argument or prompt
+# Get import directory from argument or interactive prompt
 IMPORT_DIR="$1"
 
 if [[ -z "$IMPORT_DIR" ]]; then
-    read -p "Enter path to your exported keys directory: " IMPORT_DIR
+    echo ""
+    read -p "Do you have exported keys from your old Mac to import? (y/N): " -n 1 -r
+    echo ""
+    
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        exit 0
+    fi
+    
+    while true; do
+        echo ""
+        read -p "Path to exported keys (or 'exit' to cancel): " IMPORT_DIR
+        
+        if [[ "$IMPORT_DIR" == "exit" ]]; then
+            exit 0
+        fi
+        
+        # Expand and validate path
+        IMPORT_DIR="$(expand_path "$IMPORT_DIR")"
+        
+        if [[ -d "$IMPORT_DIR" ]]; then
+            break
+        else
+            log_error "Directory not found: $IMPORT_DIR"
+            echo "Please check the path and try again, or type 'exit' to cancel"
+        fi
+    done
 fi
 
 # Expand tilde and resolve path
-IMPORT_DIR="${IMPORT_DIR/#\~/$HOME}"
-IMPORT_DIR="$(cd "$(dirname "$IMPORT_DIR")" && pwd)/$(basename "$IMPORT_DIR")"
+IMPORT_DIR="$(resolve_path "$IMPORT_DIR")"
 
-log_info "🔑 Starting key import process..."
-log_info "Import directory: $IMPORT_DIR"
 
 # =================================================================
 # 1. Validate Import Directory
@@ -61,13 +62,11 @@ if [[ ! -d "$IMPORT_DIR/ssh" && ! -d "$IMPORT_DIR/gpg" ]]; then
     exit 1
 fi
 
-log_success "Found valid export directory"
 
 # =================================================================
 # 2. Import SSH Keys
 # =================================================================
 if [[ -d "$IMPORT_DIR/ssh" ]] && [[ -n "$(ls -A "$IMPORT_DIR/ssh" 2>/dev/null)" ]]; then
-    log_info "📡 Importing SSH keys..."
 
     # Create SSH directory if it doesn't exist
     mkdir -p ~/.ssh
@@ -81,7 +80,6 @@ if [[ -d "$IMPORT_DIR/ssh" ]] && [[ -n "$(ls -A "$IMPORT_DIR/ssh" 2>/dev/null)" 
             keyname=$(basename "$keyfile")
             cp "$keyfile" ~/.ssh/
             chmod 600 ~/.ssh/"$keyname"
-            log_success "Imported private key: $keyname"
             # ((SSH_IMPORTED++))
         fi
     done
@@ -92,7 +90,6 @@ if [[ -d "$IMPORT_DIR/ssh" ]] && [[ -n "$(ls -A "$IMPORT_DIR/ssh" 2>/dev/null)" 
             keyname=$(basename "$keyfile")
             cp "$keyfile" ~/.ssh/
             chmod 644 ~/.ssh/"$keyname"
-            log_success "Imported public key: $keyname"
         fi
     done
 
@@ -104,7 +101,6 @@ if [[ -d "$IMPORT_DIR/ssh" ]] && [[ -n "$(ls -A "$IMPORT_DIR/ssh" 2>/dev/null)" 
         fi
         cp "$IMPORT_DIR/ssh/config" ~/.ssh/
         chmod 644 ~/.ssh/config
-        log_success "Imported SSH config"
     fi
 
     # Import known_hosts
@@ -114,11 +110,9 @@ if [[ -d "$IMPORT_DIR/ssh" ]] && [[ -n "$(ls -A "$IMPORT_DIR/ssh" 2>/dev/null)" 
             cat "$IMPORT_DIR/ssh/known_hosts" >> ~/.ssh/known_hosts
             # Remove duplicates
             sort -u ~/.ssh/known_hosts > ~/.ssh/known_hosts.tmp && mv ~/.ssh/known_hosts.tmp ~/.ssh/known_hosts
-            log_success "Merged known_hosts"
         else
             cp "$IMPORT_DIR/ssh/known_hosts" ~/.ssh/
             chmod 644 ~/.ssh/known_hosts
-            log_success "Imported known_hosts"
         fi
     fi
 
@@ -131,18 +125,12 @@ if [[ -d "$IMPORT_DIR/ssh" ]] && [[ -n "$(ls -A "$IMPORT_DIR/ssh" 2>/dev/null)" 
 
 	# Add keys to SSH agent
 	ssh-add ~/.ssh/id_* 2>/dev/null || true
-	log_success "Added SSH keys to agent"
-
-    log_success "Imported SSH key(s)"
-else
-    log_info "No SSH keys to import"
 fi
 
 # =================================================================
 # 3. Import GPG Keys
 # =================================================================
 if [[ -d "$IMPORT_DIR/gpg" ]] && [[ -n "$(ls -A "$IMPORT_DIR/gpg" 2>/dev/null)" ]]; then
-    log_info "🔐 Importing GPG keys..."
 
     # Check if GPG is available
     if ! command -v gpg &> /dev/null; then
@@ -159,7 +147,6 @@ if [[ -d "$IMPORT_DIR/gpg" ]] && [[ -n "$(ls -A "$IMPORT_DIR/gpg" 2>/dev/null)" 
     # Import public keys
     if [[ -f "$IMPORT_DIR/gpg/gpg-public-keys.asc" ]]; then
         if gpg --import "$IMPORT_DIR/gpg/gpg-public-keys.asc"; then
-            log_success "Imported GPG public keys"
             GPG_IMPORTED=true
         else
             log_error "Failed to import GPG public keys"
@@ -168,9 +155,7 @@ if [[ -d "$IMPORT_DIR/gpg" ]] && [[ -n "$(ls -A "$IMPORT_DIR/gpg" 2>/dev/null)" 
 
     # Import private keys
     if [[ -f "$IMPORT_DIR/gpg/gpg-private-keys.asc" ]]; then
-        log_info "Importing private keys (you may need to enter passphrases)..."
         if gpg --import "$IMPORT_DIR/gpg/gpg-private-keys.asc"; then
-            log_success "Imported GPG private keys"
             GPG_IMPORTED=true
         else
             log_error "Failed to import GPG private keys"
@@ -179,88 +164,122 @@ if [[ -d "$IMPORT_DIR/gpg" ]] && [[ -n "$(ls -A "$IMPORT_DIR/gpg" 2>/dev/null)" 
 
     # Import trust database
     if [[ -f "$IMPORT_DIR/gpg/gpg-trust.txt" ]]; then
-        if gpg --import-ownertrust "$IMPORT_DIR/gpg/gpg-trust.txt"; then
-            log_success "Imported GPG trust database"
-        else
+        if ! gpg --import-ownertrust "$IMPORT_DIR/gpg/gpg-trust.txt"; then
             log_warning "Failed to import GPG trust database"
         fi
     fi
 
-    if [[ "$GPG_IMPORTED" == "true" ]]; then
-        log_success "GPG keys imported successfully"
-
-        # Show imported keys
-        log_info "Imported GPG keys:"
-        gpg --list-secret-keys --keyid-format LONG
-    fi
-else
-    log_info "No GPG keys to import"
+    # GPG keys imported if needed
 fi
 
 # =================================================================
 # 4. Test Imported Keys
 # =================================================================
-log_info "🧪 Testing imported keys..."
 
 # Test SSH
 if [[ -f ~/.ssh/id_ed25519 || -f ~/.ssh/id_rsa ]]; then
-    log_info "Testing SSH connection to GitHub..."
-    if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -T git@github.com 2>&1 | grep -q "successfully authenticated"; then
-        log_success "SSH key works with GitHub"
-    else
-        log_warning "SSH test failed or GitHub is unreachable"
-        log_info "You can test manually later: ssh -T git@github.com"
+    if ! ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -T git@github.com 2>&1 | grep -q "successfully authenticated"; then
+        log_warning "SSH test failed or GitHub is unreachable - test manually: ssh -T git@github.com"
     fi
 fi
 
 # Test GPG
 if command -v gpg &> /dev/null && gpg --list-secret-keys --keyid-format LONG | grep -q "^sec"; then
-    log_info "Testing GPG signing..."
-    if echo "test message" | gpg --clearsign > /dev/null 2>&1; then
-        log_success "GPG signing works"
-    else
+    if ! echo "test message" | gpg --clearsign > /dev/null 2>&1; then
         log_warning "GPG signing test failed - you may need to enter your passphrase"
     fi
 fi
 
 # =================================================================
-# 4. Import Git Configuration
+# 4. Load Git Configuration
 # =================================================================
-log_info "🔧 Importing Git configuration..."
 
 if [[ -f "$IMPORT_DIR/git-config.sh" ]]; then
-    # Create Don's config directory
-    mkdir -p ~/.config/don
-
-    # Copy the git configuration
-    cp "$IMPORT_DIR/git-config.sh" ~/.config/don/git-config.sh
-    log_success "Imported Git configuration to ~/.config/don/git-config.sh"
-
-    # Source the configuration and display what was imported
+    # Source the git configuration directly
     source "$IMPORT_DIR/git-config.sh"
-    log_info "Imported Git settings:"
-    log_info "  Name: ${DON_GIT_NAME:-'(not set)'}"
-    log_info "  Email: ${DON_GIT_EMAIL:-'(not set)'}"
-    log_info "  GPG Key: ${DON_GPG_KEY:-'(none)'}"
-    log_info "  Default Branch: ${DON_DEFAULT_BRANCH:-'main'}"
-    log_info "  Pull Strategy: ${DON_PULL_REBASE:-'false'}"
 else
     log_warning "No git configuration found in export"
 fi
 
 # =================================================================
-# 5. Configure Git (if keys available)
+# 5. Configure Git
 # =================================================================
-log_info "🔧 Applying Git configuration..."
+if [[ -f "$IMPORT_DIR/git-config.sh" ]]; then
 
-# Run git setup if available
-if [[ -f "./scripts/git-setup-don.sh" ]]; then
-    log_info "Running Git configuration script..."
-    chmod +x "./scripts/git-setup-don.sh"
-    "./scripts/git-setup-don.sh"
+    # Set user name
+    CURRENT_NAME=$(git config --global user.name 2>/dev/null || echo "")
+    if [[ "$CURRENT_NAME" != "$DON_GIT_NAME" ]]; then
+        git config --global user.name "$DON_GIT_NAME"
+    fi
+
+    # Set user email
+    CURRENT_EMAIL=$(git config --global user.email 2>/dev/null || echo "")
+    if [[ "$CURRENT_EMAIL" != "$DON_GIT_EMAIL" ]]; then
+        git config --global user.email "$DON_GIT_EMAIL"
+    fi
+
+    # =================================================================
+    # GPG Signing Configuration
+    # =================================================================
+
+    # Set GPG signing key
+    CURRENT_KEY=$(git config --global user.signingkey 2>/dev/null || echo "")
+    if [[ "$CURRENT_KEY" != "$DON_GPG_KEY" ]]; then
+        git config --global user.signingkey "$DON_GPG_KEY"
+    fi
+
+    # Enable commit signing
+    CURRENT_SIGNING=$(git config --global commit.gpgsign 2>/dev/null || echo "false")
+    if [[ "$CURRENT_SIGNING" != "true" ]]; then
+        git config --global commit.gpgsign true
+    fi
+
+    # Set GPG program path (for macOS)
+    CURRENT_GPG_PROGRAM=$(git config --global gpg.program 2>/dev/null || echo "")
+
+    # Use imported GPG program if available, otherwise determine based on architecture
+    if [[ -n "$DON_GPG_PROGRAM" ]]; then
+        EXPECTED_GPG_PROGRAM="$DON_GPG_PROGRAM"
+    else
+        EXPECTED_GPG_PROGRAM="/opt/homebrew/bin/gpg"
+    fi
+
+    if [[ "$CURRENT_GPG_PROGRAM" != "$EXPECTED_GPG_PROGRAM" ]]; then
+        git config --global gpg.program "$EXPECTED_GPG_PROGRAM"
+    fi
+
+    # =================================================================
+    # Additional Git Preferences
+    # =================================================================
+
+    # Set default branch name for new repositories
+    DESIRED_BRANCH="${DON_DEFAULT_BRANCH:-main}"
+    CURRENT_INIT_BRANCH=$(git config --global init.defaultBranch 2>/dev/null || echo "")
+    if [[ "$CURRENT_INIT_BRANCH" != "$DESIRED_BRANCH" ]]; then
+        git config --global init.defaultBranch "$DESIRED_BRANCH"
+    fi
+
+    # Configure pull strategy
+    DESIRED_REBASE="${DON_PULL_REBASE:-false}"
+    CURRENT_PULL_REBASE=$(git config --global pull.rebase 2>/dev/null || echo "")
+    if [[ "$CURRENT_PULL_REBASE" != "$DESIRED_REBASE" ]]; then
+        git config --global pull.rebase "$DESIRED_REBASE"
+    fi
+
+    # Test GPG signing
+    if command -v gpg &> /dev/null; then
+        if gpg --list-secret-keys --keyid-format LONG | grep -q "$DON_GPG_KEY"; then
+            if ! echo "test" | gpg --clear-sign --local-user "$DON_GPG_KEY" > /dev/null 2>&1; then
+                log_warning "GPG signing test failed - you may need to enter your passphrase"
+            fi
+        else
+            log_warning "GPG key $DON_GPG_KEY not found in keyring"
+        fi
+    else
+        log_warning "GPG not found - install with: brew install gnupg"
+    fi
 else
-    log_warning "Git setup script not found. Configure manually if needed."
-    log_info "Expected location: ./scripts/git-setup-don.sh"
+    log_warning "No git configuration found - skipping Git setup"
 fi
 
 # =================================================================
@@ -280,9 +299,7 @@ echo ""
 read -p "Delete the import directory now? (y/N): " -n 1 -r
 echo ""
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-    log_info "Securely deleting import directory..."
     rm -rf "$IMPORT_DIR"
-    log_success "Import directory deleted"
 else
     log_warning "Remember to delete '$IMPORT_DIR' after verifying everything works!"
 fi
@@ -290,16 +307,4 @@ fi
 # =================================================================
 # 7. Final Summary
 # =================================================================
-log_success "🎉 Key import completed!"
-echo ""
-log_info "📋 Import Summary:"
-echo "  • SSH keys: $(ls ~/.ssh/id_* 2>/dev/null | grep -v ".pub" | wc -l | tr -d ' ') imported"
-echo "  • GPG keys: $(gpg --list-secret-keys --keyid-format LONG 2>/dev/null | grep -c "^sec" || echo "0") imported"
-echo ""
-log_info "✅ Verification Checklist:"
-echo "  [ ] SSH to GitHub: ssh -T git@github.com"
-echo "  [ ] GPG signing: echo 'test' | gpg --clearsign"
-echo "  [ ] Git config: git config --get user.signingkey"
-echo "  [ ] Test commit: git commit --allow-empty -m 'Test signing'"
-echo ""
-log_info "🎯 Your keys are now ready for use on this new Mac!"
+log_success "🎉 Key import and Git setup completed!"

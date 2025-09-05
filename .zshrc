@@ -7,16 +7,27 @@
 # =================================================================
 autoload -U +X compinit && compinit # Required for loading oh-my-zsh plugins.
 
+source ./.exports
+source ./.aliases
+source ./.functions
+
 source "${ZDOTDIR:-$HOME}/.zprezto/init.zsh"
 
 # Initialize Starship prompt (Don's custom prompt)
 eval "$(starship init zsh)"
 
 # alias gcm='git checkout $(git_main_branch)'
-export ZSH_PLUGINS="$HOME/.oh-my-zsh/plugins"
-source "$ZSH_PLUGINS/git/git.plugin.zsh"
-source "$ZSH_PLUGINS/common-aliases/common-aliases.plugin.zsh"
-source "$ZSH_PLUGINS/encode64/encode64.plugin.zsh"
+export OHMY_ZSH_HOME="$HOME/.oh-my-zsh"
+export OHMY_ZSH_PLUGINS="$HOME/.oh-my-zsh/plugins"
+source "$OHMY_ZSH_PLUGINS/git/git.plugin.zsh"
+source "$OHMY_ZSH_PLUGINS/common-aliases/common-aliases.plugin.zsh"
+source "$OHMY_ZSH_PLUGINS/encode64/encode64.plugin.zsh"
+source "$OHMY_ZSH_HOME/custom/plugins/you-should-use/you-should-use.plugin.zsh"
+
+
+# Key Bindings
+# Accept suggestions using TAB (default is right arrow)
+bindkey '\t' end-of-line
 
 # =================================================================
 # Don's Development Environment Setup
