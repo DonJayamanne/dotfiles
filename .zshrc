@@ -7,9 +7,9 @@
 # =================================================================
 autoload -U +X compinit && compinit # Required for loading oh-my-zsh plugins.
 
-source ./.exports
-source ./.aliases
-source ./.functions
+source $HOME/.exports
+source $HOME/.aliases
+source $HOME/.functions
 
 source "${ZDOTDIR:-$HOME}/.zprezto/init.zsh"
 
@@ -32,10 +32,6 @@ bindkey '\t' end-of-line
 # =================================================================
 # Don's Development Environment Setup
 # =================================================================
-
-# GPG Configuration for commit signing
-export GPG_TTY=$(tty)
-
 
 # PyEnv Configuration - Don's Python version management
 export PYENV_ROOT="$HOME/.pyenv"
