@@ -16,7 +16,7 @@ source "${ZDOTDIR:-$HOME}/.zprezto/init.zsh"
 # Initialize Starship prompt (Don's custom prompt)
 eval "$(starship init zsh)"
 
-# alias gcm='git checkout $(git_main_branch)'
+alias gcm='git checkout $(git_main_branch)'
 export OHMY_ZSH_HOME="$HOME/.oh-my-zsh"
 export OHMY_ZSH_PLUGINS="$HOME/.oh-my-zsh/plugins"
 source "$OHMY_ZSH_PLUGINS/git/git.plugin.zsh"
@@ -46,3 +46,5 @@ export PYENV_ROOT="$HOME/.pyenv"
 # Azure CLI Completions (https://learn.microsoft.com/en-us/cli/azure/install-azure-cli-macos?view=azure-cli-latest#completion-isnt-working)
 # autoload bashcompinit && bashcompinit
 # source $(brew --prefix)/etc/bash_completion.d/az
+
+. "$HOME/.local/bin/env"

@@ -39,8 +39,9 @@ don_packages=(
     # "ripgrep"       # Better grep (faster)
     # "fd"            # Better find
     # "htop"          # Better top
-    "tree"          # Directory tree visualization
+    "tree"            # Directory tree visualization
     # "jq"            # JSON processor
+    "rename"          # Batch renaming of files
 
     # Network and utilities
     "curl"          # Latest curl version
